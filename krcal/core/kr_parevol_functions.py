@@ -4,11 +4,10 @@ from . fit_functions        import compute_drift_v
 from . fit_functions        import quick_gauss_fit
 from . kr_types             import ASectorMap
 from . kr_types             import masks_container
+from . core_functions       import resolution
 
-
-from invisible_cities.reco .corrections_new import apply_all_correction
-from invisible_cities.reco .corrections_new import norm_strategy
-from invisible_cities.icaro.  hst_functions import resolution
+from invisible_cities.reco .corrections     import apply_all_correction
+from invisible_cities.reco .corrections     import norm_strategy
 
 from typing import List
 from typing import Tuple
@@ -99,6 +98,7 @@ def computing_kr_parameters(data       : pd.DataFrame,
                                         data.X.values,
                                         data.Y.values),
                                     zslices_lt, zrange_lt)
+                        
     e0,  lt  = fr.par
     e0u, ltu = fr.err
 
@@ -127,6 +127,7 @@ def computing_kr_parameters(data       : pd.DataFrame,
         data_value           = getattr(data, parameter)
         mean_d[parameter] = np.mean(data_value)
         var_d [parameter] = (np.var(data_value)/len(data_value))**0.5
+    
 
     ## saving as pd.DataFrame
     pars = pd.DataFrame({'ts'   : [ts]             ,
@@ -207,12 +208,19 @@ def kr_time_evolution(ts         : np.array,
     frames = []
     for index in range(len(masks_time)):
         sel_dst = dst[masks_time[index]]
-        pars    = computing_kr_parameters(sel_dst, ts[index],
+        
+        if len(sel_dst) == 0:
+            print('kr_time_evolution: sel_dst has 0 events')
+            
+            continue
+            
+        else:
+            pars    = computing_kr_parameters(sel_dst, ts[index],
                                           emaps,
                                           zslices_lt, zrange_lt,
                                           nbins_dv, zrange_dv,
                                           detector)
-        frames.append(pars)
+            frames.append(pars)
 
     total_pars = pd.concat(frames, ignore_index=True)
 
@@ -252,16 +260,45 @@ def cut_time_evolution(masks_time : List[np.array],
     nS1    = np.zeros(len_ts)
     nS2    = np.zeros(len_ts)
     nBand  = np.zeros(len_ts)
+    
+#     i = 0
     for index in range(len_ts):
+        
         t_mask       = masks_time[index]
-        n0   [index] = dst[t_mask].event.nunique()
-        nS1mask      = t_mask  & masks_cuts.s1
-        nS1  [index] = dst[nS1mask].event.nunique()
-        nS2mask      = nS1mask & masks_cuts.s2
-        nS2  [index] = dst[nS2mask].event.nunique()
-        nBandmask    = nS2mask & masks_cuts.band
-        nBand[index] = dst[nBandmask].event.nunique()
-
+        
+        
+        
+        if len(dst[t_mask]) == 0:
+            print('cut_time_evolution: dst[t_mask] has 0 events')
+            continue
+            
+        else:
+            n0   [index] = dst[t_mask].event.nunique()
+            nS1mask      = t_mask  & masks_cuts.s1
+            nS1  [index] = dst[nS1mask].event.nunique()
+            nS2mask      = nS1mask & masks_cuts.s2
+            nS2  [index] = dst[nS2mask].event.nunique()
+            nBandmask    = nS2mask & masks_cuts.band
+            nBand[index] = dst[nBandmask].event.nunique()
+    
+    print('\nLen of n0', len(n0))
+    print('Len of nS1', len(nS1))
+    print('Len of nS2', len(nS2))
+    print('Len of nBand', len(nBand))
+    
+    print('Len of pars_table', len(pars_table))
+    
+    n0 = n0[n0 != 0]
+    nS1 = nS1[nS1 != 0]
+    nS2 = nS2[nS2 != 0]
+    nBand = nBand[nBand != 0]
+    
+    print('\nLen of n0', len(n0))
+    print('Len of nS1', len(nS1))
+    print('Len of nS2', len(nS2))
+    print('Len of nBand', len(nBand))
+    
+    
     pars_table_out = pars_table.assign(S1eff   = nS1   / n0,
                                        S2eff   = nS2   / nS1,
                                        Bandeff = nBand / nS2)
