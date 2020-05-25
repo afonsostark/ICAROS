@@ -93,7 +93,7 @@ def draw_xy_maps(aMap    : ASectorMap,
     vmin, vmax = vmin_max(lulims)
     sns.heatmap(aMap.ltu.fillna(0), vmin=vmin, vmax=vmax, cmap=cmap, square=True)
     plt.tight_layout()
-    plt.show()
+#     plt.show()
 
 
 def draw_xy_map(aMap    : ASectorMap,
