@@ -16,6 +16,7 @@ Last revised: Feb, 2019
 """
 import numpy as np
 import warnings
+import matplotlib.pyplot as plt
 from   pandas               import DataFrame
 
 from typing                 import List
@@ -29,9 +30,19 @@ from . fit_lt_functions     import pars_from_fcs
 from . selection_functions  import get_time_series_df
 from . kr_types             import FitType, FitParTS
 
+from invisible_cities.core.fit_functions  import profileX
+from invisible_cities.core.fit_functions  import expo
+from invisible_cities.core.fit_functions  import fit as ft
 
 import logging
 log = logging.getLogger(__name__)
+
+class myfloat(float):
+    def __str__(self):
+        if isnan(self):
+            return 'Not available'
+        else:
+            return super(myfloat, self).__str__()
 
 
 def time_fcs_df(ts      : np.array,
@@ -213,52 +224,52 @@ def fit_map_xy_df(selection_map : Dict[int, List[DataFrame]],
     print('Fit type:',str(fit).replace('FitType.',''))
     print('Nmin:',n_min)
 
-#     for k in range(0,len(selection_map),1):
-#         for l in range(0,len(selection_map),1):
-#             if event_map[k][l] > 1:
-#                 r_pos = ((((55*2)/50)*(k - 24))**2 + ((((55*2)/50)*(l - 24))**2))**(1/2)
+    for k in range(0,len(selection_map),1):
+        for l in range(0,len(selection_map),1):
+            if event_map[k][l] > 1:
+                r_pos = ((((60*2)/40)*(k - 19))**2 + ((((60*2)/40)*(l - 19))**2))**(1/2)
 
 #                 fig = plt.figure();
-#                 x[k][l], y[k][l], yu[k][l] = profileX(selection_map[k][l].Z, selection_map[k][l].S2e, 30, (0, 500));
-#                 plt.figure(figsize=(18,8))
-#                 plt.subplot(1,2,1)
-#                 plt.errorbar(x[k][l],y[k][l],yu[k][l],fmt="kp");
-#                 plt.plot(x[k][l],fMAP[k][l].e0*np.exp(-x[k][l]/fMAP[k][l].lt),'r',(15,320));
-#                 textstr_1 = 'Bins: {:.0f} (nmin = {:.0f})\nFitType: {} ({:.0f} evts.)\nPosition xy: ({:.0f},{:.0f}) (r = {:.2f} mm)\n'.format(len(selection_map),n_min,str(fit).replace('FitType.',''),event_map[k][l],k,l,r_pos)
-#                 textstr_2 = 'e0 = {:.2f} \u00B1 {:.2f}\nLt = {:.2f} \u00B1 {:.2f}\nChi2 = {:.2f}'.format(myfloat(fMAP[k][l].e0),myfloat(fMAP[k][l].e0u),myfloat(fMAP[k][l].lt),myfloat(fMAP[k][l].ltu),myfloat(fMAP[k][l].c2))
+                x[k][l], y[k][l], yu[k][l] = profileX(selection_map[k][l].Z, selection_map[k][l].S2e, 30, (0, 500));
+                plt.figure(figsize=(18,8))
+                plt.subplot(1,2,1)
+                plt.errorbar(x[k][l],y[k][l],yu[k][l],fmt="kp");
+                plt.plot(x[k][l],fMAP[k][l].e0*np.exp(-x[k][l]/fMAP[k][l].lt),'r',(15,320));
+                textstr_1 = 'Bins: {:.0f} (nmin = {:.0f})\nFitType: {} ({:.0f} evts.)\nPosition xy: ({:.0f},{:.0f}) (r = {:.2f} mm)\n'.format(len(selection_map),n_min,str(fit).replace('FitType.',''),event_map[k][l],k,l,r_pos)
+                textstr_2 = 'e0 = {:.2f} \u00B1 {:.2f}\nLt = {:.2f} \u00B1 {:.2f}\nChi2 = {:.2f}'.format(myfloat(fMAP[k][l].e0),myfloat(fMAP[k][l].e0u),myfloat(fMAP[k][l].lt),myfloat(fMAP[k][l].ltu),myfloat(fMAP[k][l].c2))
 #                 plt.text(320, 12200, textstr_1, fontsize=18);
 #                 plt.text(780, 12300, textstr_2, fontsize=18);
                 
-# #                 plt.text(320, 11200, textstr_1, fontsize=18);
-# #                 plt.text(780, 11300, textstr_2, fontsize=18);
-# #                 plt.text(-20, 11200, textstr_1, fontsize=18);
-# #                 plt.text(340, 11300, textstr_2, fontsize=18);
-#                 plt.xlabel('Drift time ($\mu$s)',fontsize=18); plt.ylabel('S2e (pes)',fontsize=18)
-#                 a = plt.hist2d(selection_map[k][l].Z,selection_map[k][l].S2e, 30, range=((0,500),range_e),cmap='coolwarm');
-#                 plt.tick_params(axis='both',labelsize=18);
-#                 cbar = plt.colorbar(a[3]);
-#                 cbar.ax.tick_params(labelsize=18);
-#                 cbar.set_label('Number of events',fontsize=18);
+                plt.text(320, 11200, textstr_1, fontsize=18);
+                plt.text(780, 11300, textstr_2, fontsize=18);
+#                 plt.text(-20, 11200, textstr_1, fontsize=18);
+#                 plt.text(340, 11300, textstr_2, fontsize=18);
+                plt.xlabel('Z (mm)',fontsize=18); plt.ylabel('S2e (pes)',fontsize=18)
+                a = plt.hist2d(selection_map[k][l].Z,selection_map[k][l].S2e, 30, range=((0,500),range_e),cmap='coolwarm');
+                plt.tick_params(axis='both',labelsize=18);
+                cbar = plt.colorbar(a[3]);
+                cbar.ax.tick_params(labelsize=18);
+                cbar.set_label('Number of events',fontsize=18);
                 
                 
-#                 plt.subplot(1,2,2)
-#                 plt.hist(selection_map[k][l].S2e,40,range_e,label='Entries: {0}'.format(len(selection_map[k][l].S2e)), histtype = 'stepfilled');
-#                 plt.xlabel('S2e (pes)',fontsize=18)
-#                 plt.ylabel('Entries',fontsize=18)
-#                 plt.axvline(x=np.mean(selection_map[k][l].S2e),color='r',label='Mean value = {:.2f}'.format(np.mean(selection_map[k][l].S2e)), linewidth = 2)
-#                 plt.axvline(x=np.median(selection_map[k][l].S2e),color='g',label='Median value = {:.2f}'.format(np.median(selection_map[k][l].S2e)), linewidth = 2)
-#                 plt.legend()
-#                 plt.tick_params(axis='both',labelsize=18)
+                plt.subplot(1,2,2)
+                plt.hist(selection_map[k][l].S2e,40,range_e,label='Entries: {0}'.format(len(selection_map[k][l].S2e)), histtype = 'stepfilled');
+                plt.xlabel('S2e (pes)',fontsize=18)
+                plt.ylabel('Entries',fontsize=18)
+                plt.axvline(x=np.mean(selection_map[k][l].S2e),color='r',label='Mean value = {:.2f}'.format(np.mean(selection_map[k][l].S2e)), linewidth = 2)
+                plt.axvline(x=np.median(selection_map[k][l].S2e),color='g',label='Median value = {:.2f}'.format(np.median(selection_map[k][l].S2e)), linewidth = 2)
+                plt.legend()
+                plt.tick_params(axis='both',labelsize=18)
 
 #                 plt.savefig('/home/afonso/data/results/7949_7950_7951_7952_7953_7954_7955_7956_results/fits_map_dst_corrected_50bins/{}_{}bins_{}xbin_{}ybin.png'.format(str(fit).replace('FitType.',''),len(fMAP),k,l), dpi=fig.dpi, bbox_inches = "tight")
                 
-# #                 plt.savefig('/home/afonso/data/results/7949_7950_7951_7952_7953_7954_7955_7956_results/fits_map_creation_50bins/{}_{}bins_{}xbin_{}ybin.png'.format(str(fit).replace('FitType.',''),len(fMAP),k,l), dpi=fig.dpi, bbox_inches = "tight")
-# #                 plt.show();
+                plt.savefig('/home/afonso/data/results/7957_7959_7961_7964_7965_7966_results/fits_map_creation_40bins/{}_{}bins_{}xbin_{}ybin.png'.format(str(fit).replace('FitType.',''),len(fMAP),k,l), dpi=fig.dpi, bbox_inches = "tight")
+#                 plt.show();
                 
                 
-#                 plt.close('all')
-#             else:
-#                 continue
+                plt.close('all')
+            else:
+                continue
     return fMAP
 
 
